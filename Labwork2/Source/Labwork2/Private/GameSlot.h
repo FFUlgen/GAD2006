@@ -7,6 +7,8 @@
 #include "Components/BoxComponent.h"
 #include "GameSlot.generated.h"
 
+class AUnitBase;
+
 USTRUCT(Blueprintable)
 struct FSGridPosition
 {
@@ -18,10 +20,10 @@ struct FSGridPosition
 		Row(row) {}
 
 	UPROPERTY(EditAnywhere)
-	uint8 Col;
+		uint8 Col;
 
 	UPROPERTY(EditAnywhere)
-	uint8 Row;
+		uint8 Row;
 };
 UENUM(Blueprintable)
 enum EGridState
@@ -36,31 +38,39 @@ UCLASS()
 class AGameSlot : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AGameSlot();
 
 	UPROPERTY(BluePrintReadWrite)
-	FSGridPosition GridPosition;
+		FSGridPosition GridPosition;
 
 	UPROPERTY(EditAnywhere)
-	UBoxComponent* Box;
+		UBoxComponent* Box;
 
 	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* Plane;
+		UStaticMeshComponent* Plane;
+
+	UPROPERTY(VisibleAnywhere)
+		AUnitBase* Unit;
+
+	void SpawnUnitHere(TSubclassOf<AUnitBase>& UnitClass);
 
 	UFUNCTION()
-	void SetState(EGridState NewState);
+		void SetState(EGridState NewState);
 
 private:
-	
+
 	EGridState GridState;
+
+	UFUNCTION()
+		void OnGridClicked(AActor* TouchedActor, FKey ButtonPressed);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

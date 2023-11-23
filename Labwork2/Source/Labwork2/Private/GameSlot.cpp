@@ -2,11 +2,13 @@
 
 
 #include "GameSlot.h"
+#include "UnitBase.h"
+#include "TBPlayerController.h"
 
 // Sets default values
 AGameSlot::AGameSlot()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
@@ -23,6 +25,13 @@ AGameSlot::AGameSlot()
 	Plane->SetStaticMesh(DefaultSlotMesh.Object);
 
 	SetState(GS_Default);
+}
+
+void AGameSlot::SpawnUnitHere(TSubclassOf<AUnitBase>& UnitClass)
+{
+	FVector Location = GetActorLocation();
+	AUnitBase* NewUnit = Cast<AUnitBase>(GWorld->SpawnActor(UnitClass, &Location));
+	if (NewUnit) NewUnit->AssignToSlot(this);
 }
 
 void AGameSlot::SetState(EGridState NewState)
@@ -53,11 +62,20 @@ void AGameSlot::SetState(EGridState NewState)
 	}
 }
 
+void AGameSlot::OnGridClicked(AActor* TouchedActor, FKey ButtonPressed)
+{
+	if (auto PlayerController = GWorld->GetFirstPlayerController<ATBPlayerController>())
+	{
+		PlayerController->OnActorClicked(this, ButtonPressed);
+	}
+}
+
 // Called when the game starts or when spawned
 void AGameSlot::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	OnClicked.AddUniqueDynamic(this, &AGameSlot::OnGridClicked);
+
 }
 
 // Called every frame
