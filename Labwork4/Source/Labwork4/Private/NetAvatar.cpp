@@ -24,6 +24,7 @@ void ANetAvatar::BeginPlay()
 	SpringArm->bUsePawnControlRotation = true;
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->MaxWalkSpeed = 300.0f;
 }
 
 void ANetAvatar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -35,7 +36,10 @@ void ANetAvatar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ANetAvatar::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ANetAvatar::MoveRight);
+	PlayerInputComponent->BindAction("Run", EInputEvent::IE_Pressed, this, &ANetAvatar::RunPressed);
+	PlayerInputComponent->BindAction("Run", EInputEvent::IE_Released, this, &ANetAvatar::RunReleased);
 }
+
 
 void ANetAvatar::MoveForward(float Amount)
 {
@@ -52,3 +56,51 @@ void ANetAvatar::MoveRight(float Amount)
 	FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 	AddMovementInput(ForwardDirection, Amount);
 }
+
+void ANetAvatar::RunPressed()
+{
+	if (HasAuthority())
+	{
+		bHoldingRunKey = true;
+		UpdateMovementParams();
+	}
+	else
+	{
+		ServerStartRunning();
+	}
+}
+
+void ANetAvatar::RunReleased()
+{
+	if (HasAuthority())
+	{
+		bHoldingRunKey = false;
+		UpdateMovementParams();
+	}
+	else
+	{
+		ServerStopRunning();
+	}
+}
+
+void ANetAvatar::UpdateMovementParams()
+{
+	if (bHoldingRunKey)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 300.0f;
+	}
+}
+void ANetAvatar::ServerStartRunning_Implementation()
+{
+	RunPressed();
+}
+
+void ANetAvatar::ServerStopRunning_Implementation()
+{
+	RunReleased();
+}
+

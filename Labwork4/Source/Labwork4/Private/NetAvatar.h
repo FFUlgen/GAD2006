@@ -21,9 +21,21 @@ public:
 	UPROPERTY(EditAnywhere)
 	class USpringArmComponent* SpringArm;
 
+	UPROPERTY(VisibleAnywhere)
+	bool bHoldingRunKey;
+
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION(Server, Reliable)
+	void ServerStartRunning();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStopRunning();
 private:
 	void MoveForward(float Amount);
 	void MoveRight(float Amount);
+	void RunPressed();
+	void RunReleased();
+	void UpdateMovementParams();
 };

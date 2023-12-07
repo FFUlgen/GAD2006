@@ -21,7 +21,8 @@ enum class EBodyPart : uint8
 	BP_Hands = 3,
 	BP_Legs = 4,
 	BP_Beard = 5,
-	BP_COUNT = 6
+	BP_EyeBrows = 6,
+	BP_COUNT = 7
 };
 
 USTRUCT(BlueprintType)
@@ -48,6 +49,20 @@ struct FSBodyPartSelection
 	bool isFemale;
 };
 
+USTRUCT(BlueprintType)
+struct FSPlayerInfo
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText Nickname;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FSBodyPartSelection BodyParts;
+
+	bool Ready;
+};
+
 UCLASS()
 class AANetBaseCharacter : public ACharacter
 {
@@ -71,9 +86,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ChangeGender(bool isFemale);
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_PlayerInfoChanged)
 	FSBodyPartSelection PartSelection;
 
+	UFUNCTION(Server, Reliable)
+	void SubmitPlayerInfoToServer(FSPlayerInfo Info);
+	
+	UFUNCTION()
+	void OnRep_PlayerInfoChanged();
+
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 private:
 
 	UPROPERTY()
@@ -93,6 +115,9 @@ private:
 
 	UPROPERTY()
 	UStaticMeshComponent* PartEyes;
+
+	UPROPERTY()
+	UStaticMeshComponent* PartEyeBrows;
 
 	static FSMeshAssetList* GetBodyPartList(EBodyPart part, bool isFemale);
 

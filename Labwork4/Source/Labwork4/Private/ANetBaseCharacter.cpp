@@ -2,17 +2,19 @@
 
 
 #include "ANetBaseCharacter.h"
+#include "NetGameInstance.h"
 
 static UDataTable* SBodyParts = nullptr;
 
-static wchar_t* BodyPartNames[] =
+static const wchar_t* BodyPartNames[] =
 {
 	TEXT("Face"),
 	TEXT("Hair"),
 	TEXT("Chest"),
 	TEXT("Hands"),
 	TEXT("Legs"),
-	TEXT("Beard")
+	TEXT("Beard"),
+	TEXT("EyeBrows")
 };
 // Sets default values
 AANetBaseCharacter::AANetBaseCharacter()
@@ -38,6 +40,9 @@ AANetBaseCharacter::AANetBaseCharacter()
 	PartBeard = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Beard"));
 	PartBeard->SetupAttachment(PartFace, FName("headSocket"));
 
+	PartEyeBrows = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EyeBrows"));
+	PartEyeBrows->SetupAttachment(PartFace, FName("headSocket"));
+
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SK_Eyes(TEXT("StaticMesh'/Game/StylizedModularChar/Meshes/SM_Eyes.SM_Eyes'"));
 
 	PartEyes = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Eyes"));
@@ -53,10 +58,20 @@ void AANetBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (IsLocallyControlled())
+	{
+		UNetGameInstance* Instance = Cast<UNetGameInstance>(GWorld->GetGameInstance());
+		if (Instance && Instance->PlayerInfo.Ready)
+		{
+			SubmitPlayerInfoToServer(Instance->PlayerInfo);
+
+		}
+	}
 }
 
 void AANetBaseCharacter::OnConstruction(const FTransform& Transform)
 {
+	UpdateBodyParts();
 }
 
 // Called every frame
@@ -68,21 +83,88 @@ void AANetBaseCharacter::Tick(float DeltaTime)
 
 void AANetBaseCharacter::ChangeBodyPart(EBodyPart index, int value, bool DirectSet)
 {
+	FSMeshAssetList* List = GetBodyPartList(index, PartSelection.isFemale);
+	if (List == nullptr) return;
+
+	int CurrentIndex = PartSelection.Indices[(int)index];
+
+	if (DirectSet)
+	{
+		CurrentIndex = value;
+	}
+	else
+	{
+		CurrentIndex += value;
+	}
+
+	int Num = List->ListSkeletal.Num() + List->ListStatic.Num();
+
+	if (CurrentIndex < 0)
+	{
+		CurrentIndex += Num;
+	}
+	else
+	{
+		CurrentIndex %= Num;
+	}
+
+	PartSelection.Indices[(int)index] = CurrentIndex;
+
+	switch (index)
+	{
+	case EBodyPart::BP_Face:PartFace->SetSkeletalMeshAsset(List->ListSkeletal[CurrentIndex]); break;
+	case EBodyPart::BP_Beard:PartBeard->SetStaticMesh(List->ListStatic[CurrentIndex]); break;
+	case EBodyPart::BP_Chest:GetMesh()->SetSkeletalMeshAsset(List->ListSkeletal[CurrentIndex]); break;
+	case EBodyPart::BP_Hair:PartHair->SetStaticMesh(List->ListStatic[CurrentIndex]); break;
+	case EBodyPart::BP_Hands:PartHands->SetSkeletalMeshAsset(List->ListSkeletal[CurrentIndex]); break;
+	case EBodyPart::BP_Legs:PartLegs->SetSkeletalMeshAsset(List->ListSkeletal[CurrentIndex]); break;
+	case EBodyPart::BP_EyeBrows:PartEyeBrows->SetStaticMesh(List->ListStatic[CurrentIndex]); break;
+	}
 }
 
-void AANetBaseCharacter::ChangeGender(bool isFemale)
+void AANetBaseCharacter::ChangeGender(bool _isFemale)
 {
+	PartSelection.isFemale = _isFemale;
+	UpdateBodyParts();
+}
+
+void AANetBaseCharacter::SubmitPlayerInfoToServer_Implementation(FSPlayerInfo Info)
+{
+	PartSelection = Info.BodyParts;
+
+	if (HasAuthority())
+	{
+		OnRep_PlayerInfoChanged();
+	}
+}
+
+void AANetBaseCharacter::OnRep_PlayerInfoChanged()
+{
+	UpdateBodyParts();
 }
 
 FSMeshAssetList* AANetBaseCharacter::GetBodyPartList(EBodyPart part, bool isFemale)
 {
-	return nullptr;
+	FString Name = FString::Printf(TEXT("%s%s"), isFemale ? TEXT("Female") : TEXT("Male"), BodyPartNames[(int)part]);
+	return SBodyParts ? SBodyParts->FindRow<FSMeshAssetList>(*Name, nullptr) : nullptr;
+}
+
+void AANetBaseCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AANetBaseCharacter, PartSelection);
 }
 
 void AANetBaseCharacter::UpdateBodyParts()
 {
+	ChangeBodyPart(EBodyPart::BP_Face, 0, false);
+	ChangeBodyPart(EBodyPart::BP_Beard, 0, false);
+	ChangeBodyPart(EBodyPart::BP_Chest, 0, false);
+	ChangeBodyPart(EBodyPart::BP_Hair, 0, false);
+	ChangeBodyPart(EBodyPart::BP_Hands, 0, false);
+	ChangeBodyPart(EBodyPart::BP_Legs, 0, false);
+	ChangeBodyPart(EBodyPart::BP_EyeBrows, 0, false);
 }
 
-// Called to bind functionality to input
 
 
