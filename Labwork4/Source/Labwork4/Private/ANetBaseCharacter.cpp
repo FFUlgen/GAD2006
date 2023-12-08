@@ -3,6 +3,7 @@
 
 #include "ANetBaseCharacter.h"
 #include "NetGameInstance.h"
+#include "NetPlayerState.h"
 
 static UDataTable* SBodyParts = nullptr;
 
@@ -58,15 +59,9 @@ void AANetBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (IsLocallyControlled())
-	{
-		UNetGameInstance* Instance = Cast<UNetGameInstance>(GWorld->GetGameInstance());
-		if (Instance && Instance->PlayerInfo.Ready)
-		{
-			SubmitPlayerInfoToServer(Instance->PlayerInfo);
-
-		}
-	}
+	if (GetNetMode() == ENetMode::NM_Standalone) return;
+	SetActorHiddenInGame(true);
+	CheckPlayerState();
 }
 
 void AANetBaseCharacter::OnConstruction(const FTransform& Transform)
@@ -81,12 +76,35 @@ void AANetBaseCharacter::Tick(float DeltaTime)
 
 }
 
+FString AANetBaseCharacter::GetCustomizationData()
+{
+	FString Data;
+	for (size_t i = 0; i < (int)EBodyPart::BP_COUNT; i++)
+	{
+		Data += FString::FromInt(BodyPartIndices[i]);
+		if (i < ((int)(EBodyPart::BP_COUNT)-1)) Data += TEXT(",");
+
+	}
+	return Data;
+}
+
+void AANetBaseCharacter::ParseCustomizationData(FString BodyPartData)
+{
+	TArray<FString> ArrayData;
+	BodyPartData.ParseIntoArray(ArrayData, TEXT(","));
+	for (size_t i = 0; i < ArrayData.Num(); i++)
+	{
+		BodyPartIndices[i] = FCString::Atoi(*ArrayData[i]);
+	}
+}
+
 void AANetBaseCharacter::ChangeBodyPart(EBodyPart index, int value, bool DirectSet)
 {
-	FSMeshAssetList* List = GetBodyPartList(index, PartSelection.isFemale);
+	FSMeshAssetList* List = GetBodyPartList(index, BodyPartIndices[(int)EBodyPart::BP_BodyType] != 0);
+	
 	if (List == nullptr) return;
 
-	int CurrentIndex = PartSelection.Indices[(int)index];
+	int CurrentIndex = BodyPartIndices[(int)index];
 
 	if (DirectSet)
 	{
@@ -104,11 +122,10 @@ void AANetBaseCharacter::ChangeBodyPart(EBodyPart index, int value, bool DirectS
 		CurrentIndex += Num;
 	}
 	else
-	{
 		CurrentIndex %= Num;
-	}
 
-	PartSelection.Indices[(int)index] = CurrentIndex;
+	BodyPartIndices[(int)index] = CurrentIndex;
+
 
 	switch (index)
 	{
@@ -124,24 +141,66 @@ void AANetBaseCharacter::ChangeBodyPart(EBodyPart index, int value, bool DirectS
 
 void AANetBaseCharacter::ChangeGender(bool _isFemale)
 {
-	PartSelection.isFemale = _isFemale;
+	
 	UpdateBodyParts();
 }
 
-void AANetBaseCharacter::SubmitPlayerInfoToServer_Implementation(FSPlayerInfo Info)
+void AANetBaseCharacter::CheckPlayerState()
 {
-	PartSelection = Info.BodyParts;
+	ANetPlayerState* State = GetPlayerState<ANetPlayerState>();
 
-	if (HasAuthority())
+	if (State == nullptr)
 	{
-		OnRep_PlayerInfoChanged();
+		UE_LOG(LogTemp, Warning, TEXT("State == nullptr"));
+
+		GWorld->GetTimerManager().SetTimer(ClientDataCheckTimer, this, &AANetBaseCharacter::CheckPlayerState, 0.25f, false);
+
+	}
+	else
+	{
+		if (IsLocallyControlled())
+		{
+			UNetGameInstance* Instance = Cast<UNetGameInstance>(GWorld->GetGameInstance());
+			if (Instance)
+			{
+				SubmitPlayerInfoToServer(Instance->PlayerInfo);
+			}
+		}
+		CheckPlayerInfo();
 	}
 }
 
-void AANetBaseCharacter::OnRep_PlayerInfoChanged()
+void AANetBaseCharacter::CheckPlayerInfo()
 {
-	UpdateBodyParts();
+	ANetPlayerState* State = GetPlayerState<ANetPlayerState>();
+
+	if (State && PlayerInfoReceived)
+	{
+		ParseCustomizationData(State->Data.CustomizationData);
+		UpdateBodyParts();
+		OnPlayerInfoChanged();
+		SetActorHiddenInGame(false);
+
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("State Not Received!"));
+
+		GWorld->GetTimerManager().SetTimer(ClientDataCheckTimer, this, &AANetBaseCharacter::CheckPlayerInfo, 0.25, false);
+
+	}
 }
+
+
+void AANetBaseCharacter::SubmitPlayerInfoToServer_Implementation(FSPlayerInfo Info)
+{
+	ANetPlayerState* State = GetPlayerState<ANetPlayerState>();
+	State->Data.Nickname = Info.Nickname;
+	State->Data.CustomizationData = Info.CustomizationData;
+	State->Data.TeamID = Info.TeamID;
+	PlayerInfoReceived = true;
+}
+
 
 FSMeshAssetList* AANetBaseCharacter::GetBodyPartList(EBodyPart part, bool isFemale)
 {
@@ -149,11 +208,6 @@ FSMeshAssetList* AANetBaseCharacter::GetBodyPartList(EBodyPart part, bool isFema
 	return SBodyParts ? SBodyParts->FindRow<FSMeshAssetList>(*Name, nullptr) : nullptr;
 }
 
-void AANetBaseCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AANetBaseCharacter, PartSelection);
-}
 
 void AANetBaseCharacter::UpdateBodyParts()
 {

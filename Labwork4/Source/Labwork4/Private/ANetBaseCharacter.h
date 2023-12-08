@@ -22,7 +22,8 @@ enum class EBodyPart : uint8
 	BP_Legs = 4,
 	BP_Beard = 5,
 	BP_EyeBrows = 6,
-	BP_COUNT = 7
+	BP_BodyType = 7,
+	BP_COUNT = 8
 };
 
 USTRUCT(BlueprintType)
@@ -37,31 +38,8 @@ struct FSMeshAssetList : public FTableRowBase
 	TArray<UStaticMesh*> ListStatic;
 };
 
-USTRUCT(BlueprintType)
-struct FSBodyPartSelection
-{
-	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY()
-	int Indices[(int)EBodyPart::BP_COUNT];
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool isFemale;
-};
-
-USTRUCT(BlueprintType)
-struct FSPlayerInfo
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FText Nickname;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FSBodyPartSelection BodyParts;
-
-	bool Ready;
-};
 
 UCLASS()
 class AANetBaseCharacter : public ACharacter
@@ -80,32 +58,41 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintPure)
+	FString GetCustomizationData();
+	void ParseCustomizationData(FString BodyPartData);
+
 	UFUNCTION(BlueprintCallable)
 	void ChangeBodyPart(EBodyPart index, int value, bool DirectSet);
 
 	UFUNCTION(BlueprintCallable)
 	void ChangeGender(bool isFemale);
 
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_PlayerInfoChanged)
-	FSBodyPartSelection PartSelection;
+	UFUNCTION()
+	void CheckPlayerState();
+
+	UFUNCTION()
+	void CheckPlayerInfo();
 
 	UFUNCTION(Server, Reliable)
 	void SubmitPlayerInfoToServer(FSPlayerInfo Info);
 	
-	UFUNCTION()
-	void OnRep_PlayerInfoChanged();
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnPlayerInfoChanged();
 
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMeshComponent* PartHands;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMeshComponent* PartLegs;
+
+	bool PlayerInfoReceived;
 private:
 
 	UPROPERTY()
 	USkeletalMeshComponent* PartFace;
 
-	UPROPERTY()
-	USkeletalMeshComponent* PartHands;
-
-	UPROPERTY()
-	USkeletalMeshComponent* PartLegs;
+	
 
 	UPROPERTY()
 	UStaticMeshComponent* PartHair;
@@ -121,5 +108,11 @@ private:
 
 	static FSMeshAssetList* GetBodyPartList(EBodyPart part, bool isFemale);
 
+	
+
+	int BodyPartIndices[EBodyPart::BP_COUNT];
+
 	void UpdateBodyParts();
+
+	FTimerHandle ClientDataCheckTimer;
 };

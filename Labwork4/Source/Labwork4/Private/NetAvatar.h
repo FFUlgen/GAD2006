@@ -27,6 +27,9 @@ public:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY(BlueprintReadWrite)
+	float MovementScale;
+
 	UFUNCTION(Server, Reliable)
 	void ServerStartRunning();
 
