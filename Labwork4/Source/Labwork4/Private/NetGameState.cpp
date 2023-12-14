@@ -23,7 +23,7 @@ void ANetGameState::OnRep_Winner()
 		OnVictory();
 	}
 }
-
+//
 void ANetGameState::TriggerRestart_Implementation()
 {
 	OnRestart();

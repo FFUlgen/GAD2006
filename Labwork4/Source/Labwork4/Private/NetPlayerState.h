@@ -25,7 +25,6 @@ public:
 	EPlayerTeam TeamID;
 	EGameResults Result;
 
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 private:
 
 	UFUNCTION()

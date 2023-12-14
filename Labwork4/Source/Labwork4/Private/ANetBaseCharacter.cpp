@@ -218,6 +218,3 @@ void AANetBaseCharacter::UpdateBodyParts()
 	ChangeBodyPart(EBodyPart::BP_Legs, 0, false);
 	ChangeBodyPart(EBodyPart::BP_EyeBrows, 0, false);
 }
-
-
-

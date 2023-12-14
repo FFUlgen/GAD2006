@@ -40,8 +40,6 @@ struct FSMeshAssetList : public FTableRowBase
 };
 
 
-
-
 UCLASS()
 class AANetBaseCharacter : public ACharacter
 {

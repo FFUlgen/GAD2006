@@ -82,6 +82,7 @@ void ANetGameMode::EndGame()
 		Player->StartSpot.Reset();
 		RestartPlayer(Player);
 	}
+	GetGameState<ANetGameState>()->TriggerRestart();
 }
 
 AActor* ANetGameMode::GetPlayerStart(FString Name, int Index)

@@ -33,8 +33,6 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void TriggerRestart();
 
-	
-
 	UFUNCTION(BlueprintCallable)
 	ANetPlayerState* GetPlayerStateByIndex(int PlayerIndex);
 };
