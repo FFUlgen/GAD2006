@@ -16,7 +16,7 @@ class ANetGameState : public AGameStateBase
 public:
 	ANetGameState();
 
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
+	//virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Winner)
 	int WinningPlayer;

@@ -141,7 +141,6 @@ void AANetBaseCharacter::ChangeBodyPart(EBodyPart index, int value, bool DirectS
 
 void AANetBaseCharacter::ChangeGender(bool _isFemale)
 {
-	
 	UpdateBodyParts();
 }
 
@@ -197,7 +196,7 @@ void AANetBaseCharacter::SubmitPlayerInfoToServer_Implementation(FSPlayerInfo In
 	ANetPlayerState* State = GetPlayerState<ANetPlayerState>();
 	State->Data.Nickname = Info.Nickname;
 	State->Data.CustomizationData = Info.CustomizationData;
-	State->Data.TeamID = Info.TeamID;
+	State->Data.TeamID = State->TeamID;
 	PlayerInfoReceived = true;
 }
 

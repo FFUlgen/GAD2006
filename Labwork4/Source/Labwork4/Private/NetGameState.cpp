@@ -20,7 +20,7 @@ void ANetGameState::OnRep_Winner()
 {
 	if (WinningPlayer >= 0)
 	{
-		
+		OnVictory();
 	}
 }
 

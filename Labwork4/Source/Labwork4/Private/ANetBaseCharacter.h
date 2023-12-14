@@ -6,6 +6,7 @@
 #include "Runtime/Engine/Classes/Engine/DataTable.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
+#include "NetGameInstance.h"
 #include "ANetBaseCharacter.generated.h"
 
 /**
