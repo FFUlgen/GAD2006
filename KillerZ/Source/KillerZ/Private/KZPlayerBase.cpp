@@ -4,7 +4,6 @@
 #include "KZPlayerBase.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "InputAction.h"
 
 AKZPlayerBase::AKZPlayerBase() 
 {

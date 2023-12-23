@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "KZBaseCharacter.h"
+#include "InputAction.h"
 #include "KZPlayerBase.generated.h"
 
 /**
@@ -24,7 +25,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	void EnhancedInputMove(const class FInputActionValue& Value);
+	void EnhancedInputMove(const FInputActionValue& Value);
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
