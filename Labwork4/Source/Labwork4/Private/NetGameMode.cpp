@@ -46,7 +46,7 @@ void ANetGameMode::AvatarsOverlapped(ANetAvatar* AvatarA, ANetAvatar* AvatarB)
 	AvatarA->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	AvatarB->GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 
-	GState->OnVictory();
+	//GState->OnVictory();
 
 	for (APlayerController* Player : AllPlayers)
 	{
@@ -68,6 +68,11 @@ void ANetGameMode::AvatarsOverlapped(ANetAvatar* AvatarA, ANetAvatar* AvatarB)
 
 }
 
+void ANetGameMode::CountdownOver()
+{
+	
+}
+
 void ANetGameMode::EndGame()
 {
 	PlayerStartIndex = 0;
@@ -77,6 +82,7 @@ void ANetGameMode::EndGame()
 	for (APlayerController* Player : AllPlayers)
 	{
 		APawn* Pawn = Player->GetPawn();
+
 		Player->UnPossess();
 		Pawn->Destroy();
 		Player->StartSpot.Reset();

@@ -23,6 +23,9 @@ public:
 	void AvatarsOverlapped(ANetAvatar* AvatarA, ANetAvatar* AvatarB);
 
 	UFUNCTION(BlueprintCallable)
+	void CountdownOver();
+
+	UFUNCTION(BlueprintCallable)
 	void EndGame();
 
 private:

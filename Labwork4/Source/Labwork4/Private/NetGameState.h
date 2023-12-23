@@ -28,6 +28,9 @@ public:
 	void OnVictory();
 
 	UFUNCTION(BlueprintImplementableEvent)
+	void OnCountdownOver();
+
+	UFUNCTION(BlueprintImplementableEvent)
 	void OnRestart();
 
 	UFUNCTION(NetMulticast, Reliable)
