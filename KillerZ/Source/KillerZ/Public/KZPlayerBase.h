@@ -35,9 +35,9 @@ private:
 	class USpringArmComponent* SpringArm;
 public:
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enhanced Input")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enhanced Input")
 	class UInputMappingContext* InputMappingContext;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enhanced Input")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enhanced Input")
 	class UInputAction* MoveInput;
 };
